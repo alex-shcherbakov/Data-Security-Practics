@@ -1,7 +1,7 @@
 import java.math.BigInteger;
 
 public class RSA {
-    // зміна за варіантом + обране е
+    // зміна за варіантом + обране е (первинне значення)
     public static int p = 23;
     public static int q = 89;
     public static int e = 17;
@@ -39,13 +39,12 @@ public class RSA {
     // модульно підносимо до степеня
     public static int modExponentiation(int base, int exponent, int mod) {
         int result = 1;
-        base = base % mod;  // коли base > mod
+        base = base % mod;
 
         while (exponent > 0) {
-            if (exponent % 2 == 1) {
+            if ((exponent & 1) == 1) {
                 result = (result * base) % mod;
             }
-
             exponent = exponent >> 1;
             base = (base * base) % mod;
         }
@@ -53,17 +52,23 @@ public class RSA {
         return result;
     }
 
-    // ключ d
-    public static int calculatePrivateKey() {
-        // функція Ейлера
-        int phi = (p - 1) * (q - 1);
-
-        // d, таке що (d * e) % φ(n) = 1
-        int d = modInverse(e, phi);
-        return d;
+    // обчислення НСД
+    public static int gcd(int a, int b) {
+        while (b != 0) {
+            int temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
     }
 
-    // e ^ (-1)mod ф(n) за допомогою BigInteger
+    // ключ d
+    public static int calculatePrivateKey() {
+        int phi = (p - 1) * (q - 1);
+        return modInverse(e, phi);
+    }
+
+    // e^(-1) mod m
     public static int modInverse(int e, int m) {
         BigInteger A = BigInteger.valueOf(e);
         BigInteger M = BigInteger.valueOf(m);
@@ -77,7 +82,6 @@ public class RSA {
         String[] blocks = encryptedText.split(" ");
         StringBuilder decryptedText = new StringBuilder();
 
-        // формула m = c^d mod n
         for (String block : blocks) {
             int c = Integer.parseInt(block);
             int m = modExponentiation(c, d, n);
@@ -87,23 +91,43 @@ public class RSA {
         return decryptedText.toString();
     }
 
+    // автоматичний підбір e, якщо поточне не підходить
+    public static int findValidE(int phi) {
+        int newE = 2;
+        while (newE < phi) {
+            if (gcd(newE, phi) == 1) {
+                return newE;
+            }
+            newE++;
+        }
+        throw new RuntimeException("Не вдалося знайти допустиме e");
+    }
+
     public static void main(String[] args) {
-        // починаємо
+        int phi = (p - 1) * (q - 1);
+
+        // чи e і φ(n) взаємно прості
+        if (gcd(e, phi) != 1) {
+            System.out.println("Обране e не підходить. Підбираємо нове...");
+            e = findValidE(phi);
+            System.out.println("Нове значення e: " + e);
+        }
+
+        // вхідний текст
         String input = "shch'ole";
         String formattedString = Format(input);
-        System.out.println("Представимо літери в десятковому коді за таблицею АSCII: " + formattedString);
+        System.out.println("Представимо літери в десятковому коді за таблицею ASCII: " + formattedString);
 
-        // шифруємо
+        // шифрування
         String encryptedText = encrypt(formattedString);
         System.out.println("Зашифрований текст: " + encryptedText);
 
-        // ключ d
+        // обчислення приватного ключа d
         int d = calculatePrivateKey();
-        System.out.println("значення закритого ключа d: " + d);
+        System.out.println("Значення закритого ключа d: " + d);
 
-        // розшифровуємо
+        // розшифрування
         String decryptedText = decrypt(encryptedText, d);
         System.out.println("Розшифрований текст: " + decryptedText);
-
     }
 }
