@@ -122,7 +122,7 @@ public class RSA {
         int phi = (p - 1) * (q - 1);
 
         // чи e і φ(n) взаємно прості
-        if (Divisor(e, phi) != 1) {
+        if (Divisor(e, phi) != 1 || e > phi) {
             System.out.println("Обране e не підходить. Підбираємо нове...");
             e = findValidE(phi);
             System.out.println("Нове значення e: " + e);
