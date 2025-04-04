@@ -53,7 +53,7 @@ public class RSA {
     }
 
     // обчислення НСД
-    public static int gcd(int a, int b) {
+    public static int Divisor(int a, int b) {
         while (b != 0) {
             int temp = b;
             b = a % b;
@@ -62,18 +62,33 @@ public class RSA {
         return a;
     }
 
-    // ключ d
-    public static int calculatePrivateKey() {
-        int phi = (p - 1) * (q - 1);
-        return modInverse(e, phi);
-    }
-
     // e^(-1) mod m
     public static int modInverse(int e, int m) {
         BigInteger A = BigInteger.valueOf(e);
         BigInteger M = BigInteger.valueOf(m);
         return A.modInverse(M).intValue();
     }
+    // ключ d через розширений алгоритм Евкліда
+    public static int calculatePrivateKey() {
+        int phi = (p - 1) * (q - 1);
+        int a = e, b = phi;
+        int x0 = 1, x1 = 0;
+
+        while (b != 0) {
+            int q = a / b;
+            int temp = a % b;
+            a = b;
+            b = temp;
+
+            int xTemp = x0 - q * x1;
+            x0 = x1;
+            x1 = xTemp;
+    }
+    // якщо x0 від’ємний
+    int d = (x0 % phi + phi) % phi;
+
+    return d;
+}
 
     // розшифрування тексту
     public static String decrypt(String encryptedText, int d) {
@@ -95,7 +110,7 @@ public class RSA {
     public static int findValidE(int phi) {
         int newE = 2;
         while (newE < phi) {
-            if (gcd(newE, phi) == 1) {
+            if (Divisor(newE, phi) == 1) {
                 return newE;
             }
             newE++;
@@ -107,7 +122,7 @@ public class RSA {
         int phi = (p - 1) * (q - 1);
 
         // чи e і φ(n) взаємно прості
-        if (gcd(e, phi) != 1) {
+        if (Divisor(e, phi) != 1) {
             System.out.println("Обране e не підходить. Підбираємо нове...");
             e = findValidE(phi);
             System.out.println("Нове значення e: " + e);
